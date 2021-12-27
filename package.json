@@ -23,12 +23,15 @@
     "test:ci": "npm run lint && npm run check && npm run testonly:coveralls",
     "lint": "eslint src",
     "check": "flow check --max-warnings 0",
-    "build": "babel src --ignore src/__tests__ --out-dir dist/ ; cp src/index.js dist/index.js.flow ; cp src/index.d.ts dist/",
-    "watch": "babel resources/watch.js | node",
-    "testonly": "jest src",
+    "testonly": "ts-jest",
     "testonly:coveralls": "jest src --coverage && cat ./coverage/lcov.info | coveralls",
     "preversion": ". ./resources/checkgit.sh && npm test",
-    "prepublish": ". ./resources/prepublish.sh"
+    "prepublish": ". ./resources/prepublish.sh",
+    "clean": "git clean -dfqX -- ./node_modules **/{dist,node_modules}/",
+    "build": "tsc --build tsconfig.json",
+    "build:clean": "tsc --build tsconfig.json --clean",
+    "watch": "tsc --build tsconfig.json --watch",
+    "format": "prettier --write \"src/**/*.ts\""
   },
   "files": [
     "index.js",
@@ -39,16 +42,21 @@
     "PATENTS"
   ],
   "devDependencies": {
-    "@babel/cli": "7.7.0",
-    "@babel/core": "7.7.2",
-    "@babel/node": "7.7.0",
-    "@babel/preset-env": "7.7.1",
-    "@babel/preset-flow": "7.0.0",
-    "babel-eslint": "10.0.3",
-    "coveralls": "3.0.7",
-    "eslint": "6.6.0",
-    "flow-bin": "0.112.0",
-    "jest": "24.9.0",
-    "sane": "4.1.0"
+    "@types/jest": "^27.0.3",
+    "@types/node": "^17.0.5",
+    "@typescript-eslint/eslint-plugin": "5.8.0",
+    "@typescript-eslint/parser": "5.8.0",
+    "coveralls": "3.1.1",
+    "esbuild": "0.14.8",
+    "eslint": "8.5.0",
+    "eslint-config-prettier": "8.3.0",
+    "eslint-plugin-prettier": "4.0.0",
+    "eslint-plugin-react": "^7.28.0",
+    "eslint-plugin-unicorn": "39.0.0",
+    "jest": "27.4.5",
+    "sane": "5.0.1",
+    "ts-jest": "^27.1.2",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.5.4"
   }
 }
