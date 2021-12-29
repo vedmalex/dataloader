@@ -18,6 +18,7 @@ export type Options<K, V, C = K> = {
   batchScheduleFn?: (callback: () => void) => void
   cache?: boolean
   cacheKeyFn?: (key: K) => C
+  prepareFn: (keys: Array<K>, result: Array<V | Error>) => unknown
   cacheMap?: Partial<CacheMap<C, Promise<V>>> | null
 }
 
@@ -50,11 +51,13 @@ export default class DataLoader<K, V, C = K> {
           `Array<key> and returns Promise<Array<value>>, but got: ${batchLoadFn}.`,
       )
     }
+
     this._batchLoadFn = batchLoadFn
     this._maxBatchSize = getValidMaxBatchSize(options)
     this._batchScheduleFn = getValidBatchScheduleFn(options)
     this._cacheKeyFn = getValidCacheKeyFn(options)
     this._cacheMap = getValidCacheMap(options)
+    this._prepareFn = options?.prepareFn ?? null
     this._batch = null
   }
 
@@ -66,6 +69,7 @@ export default class DataLoader<K, V, C = K> {
   _cacheMap: CacheMap<C, Promise<V>> | null
   _batch: Batch<K, V> | null
 
+  _prepareFn: ((key: Array<K>, result: Array<V | Error>) => unknown) | null
   /**
    * Loads a key, returning a `Promise` for the value represented by that key.
    */
@@ -301,6 +305,7 @@ function dispatchBatch<K, V>(
   // Call the provided batchLoadFn for this loader with the batch's keys and
   // with the loader as the `this` context.
   var batchPromise = loader._batchLoadFn(batch.keys)
+  var prepareFn = loader._prepareFn
 
   // Assert the expected response from batchLoadFn
   if (!batchPromise || typeof batchPromise.then !== 'function') {
@@ -317,6 +322,7 @@ function dispatchBatch<K, V>(
 
   // Await the resolution of the call to batchLoadFn.
   batchPromise
+
     .then(values => {
       // Assert the expected resolution from batchLoadFn.
       if (!isArrayLike(values)) {
@@ -325,6 +331,9 @@ function dispatchBatch<K, V>(
             'Array<key> and returns Promise<Array<value>>, but the function did ' +
             `not return a Promise of an Array: ${String(values)}.`,
         )
+      }
+      if (prepareFn) {
+        values = prepareFn(batch.keys, values) as Array<V | Error>
       }
       if (values.length !== batch.keys.length) {
         throw new TypeError(

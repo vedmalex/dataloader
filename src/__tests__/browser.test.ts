@@ -7,8 +7,8 @@
  */
 import 'jest'
 // Mock out process.nextTick as not existing for this test before requiring.
+process.nextTick = null
 import DataLoader from '..'
-process.nextTick = (args: null) => undefined
 
 describe('Browser support', () => {
   it('batches multiple requests without process.nextTick', async () => {
